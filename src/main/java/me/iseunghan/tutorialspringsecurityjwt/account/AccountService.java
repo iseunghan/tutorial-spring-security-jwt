@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Set;
@@ -47,25 +48,33 @@ public class AccountService implements UserDetailsService {
                 });
 
         Account account = Account.builder()
-                .username("admin")
-                .password("pass")
-                .roles(Set.of(AccountRole.ADMIN))
-                .build();
-        Account account1 = Account.builder()
-                .username("manager")
-                .password("pass")
-                .roles(Set.of(AccountRole.MANAGER))
-                .build();
-        Account account2 = Account.builder()
-                .username("user")
-                .password("pass")
+                .username(accountDto.getUsername())
+                .password(passwordEncoder.encode(accountDto.getPassword()))
                 .roles(Set.of(AccountRole.USER))
-                .build();
+                .build()
+        ;
 
-        accountRepository.save(account);
-        accountRepository.save(account1);
-        accountRepository.save(account2);
+        return accountRepository.save(account);
+    }
 
-        return List.of(account, account1, account2);
+    public Account updateAccount(Long id, AccountDto accountDto) {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 유저입니다. [id] : " + id));
+
+        if(StringUtils.hasText(accountDto.getUsername())) {
+            account.setUsername(accountDto.getUsername());
+        }
+        if(StringUtils.hasText(accountDto.getPassword())) {
+            account.setPassword(passwordEncoder.encode(accountDto.getPassword()));
+        }
+
+        return accountRepository.save(account);
+    }
+
+    public void deleteAccount(Long id) {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 유저입니다. [id] : " + id));
+
+        accountRepository.delete(account);
     }
 }
