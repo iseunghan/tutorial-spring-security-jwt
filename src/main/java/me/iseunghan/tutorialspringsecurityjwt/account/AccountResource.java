@@ -25,8 +25,8 @@ public class AccountResource extends RepresentationModel {
 
     public AccountResource(AccountDto accountDto) {
         super.add(linkTo(AccountController.class).slash(accountDto.getId()).withSelfRel());
-        super.add(linkTo(AccountController.class).slash(accountDto.getId()).withRel("PUT"));
-        super.add(linkTo(AccountController.class).slash(accountDto.getId()).withRel("DELETE"));
+        super.add(linkTo(AccountController.class).slash(accountDto.getId()).withRel("put"));
+        super.add(linkTo(AccountController.class).slash(accountDto.getId()).withRel("delete"));
         this.accountDto = accountDto;
     }
 
