@@ -16,3 +16,9 @@ spring:
 logging:
   level:
     me.iseunghan: DEBUG
+
+# jwt config
+jwt:
+  header: Authorization
+  secret: aXNldW5naGFuLWp3dC10dXRvcmlhbC1wcm9qZWN0LWp3dC1zZWNyZXQta2V5LWlzZXVuZ2hhbi10dXRvcmlhbC1qd3Qtc2VjcmV0LWtleQo=
+  token-validity-in-seconds: 1800

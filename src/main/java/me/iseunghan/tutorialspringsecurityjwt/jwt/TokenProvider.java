@@ -10,19 +10,21 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import me.iseunghan.tutorialspringsecurityjwt.account.Account;
 import me.iseunghan.tutorialspringsecurityjwt.account.AccountAdapter;
-import me.iseunghan.tutorialspringsecurityjwt.account.AccountService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 import java.security.Key;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 /**
  * 토큰 유효성 검증 및 생성
@@ -38,12 +40,10 @@ public class TokenProvider implements InitializingBean {
 
     private Key key;
 
-    @Autowired
-    AccountService accountService;
 
     // Bean 생성, 주입될 때 application.yml에서 설정한 secret, 유효시간을 받아옵니다.
     public TokenProvider(@Value("${jwt.secret}") String secret,
-                         @Value(("${jwt.token-validity-in-seconds")) long tokenValidityInMilliseconds) {
+                         @Value("${jwt.token-validity-in-seconds}") long tokenValidityInMilliseconds) {
         this.secret = secret;
         this.tokenValidityInMilliseconds = tokenValidityInMilliseconds * 1000;
     }
@@ -62,6 +62,10 @@ public class TokenProvider implements InitializingBean {
         AccountAdapter accountAdapter = (AccountAdapter) authentication.getPrincipal();
         Account account = accountAdapter.getAccount();
 
+        String authorities = accountAdapter.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(","));
+
         long now = new Date().getTime();
         Date validity = new Date(now + this.tokenValidityInMilliseconds);
 
@@ -69,6 +73,7 @@ public class TokenProvider implements InitializingBean {
                 .withSubject(authentication.getName())
                 .withClaim("id", account.getId())
                 .withClaim("username", account.getUsername())
+                .withClaim("authorities", authorities)
                 .withExpiresAt(validity)
                 .sign(Algorithm.HMAC256(key.getEncoded()));
     }
@@ -94,13 +99,12 @@ public class TokenProvider implements InitializingBean {
      * 유효한 token을 이용해 AuthenticationToken을 생성해줍니다.
      */
     public Authentication getAuthentication(String token) {
-        String username = JWT.require(Algorithm.HMAC256(key.getEncoded())).build().verify(token).getClaim("username").asString();
+        String username = JWT.decode(token).getClaim("username").asString();
 
-        if(StringUtils.hasText(username)) {
-            AccountAdapter accountAdapter = (AccountAdapter) accountService.loadUserByUsername(username);
+        Collection<? extends GrantedAuthority> authorities = Arrays.stream(JWT.decode(token).getClaim("authorities").asString().split(","))
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
 
-            return new UsernamePasswordAuthenticationToken(accountAdapter.getUsername(), accountAdapter.getPassword(), accountAdapter.getAuthorities());
-        }
-        return null;
+        return new UsernamePasswordAuthenticationToken(username, null, authorities);
     }
 }

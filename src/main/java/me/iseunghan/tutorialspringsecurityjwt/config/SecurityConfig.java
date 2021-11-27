@@ -1,6 +1,5 @@
 package me.iseunghan.tutorialspringsecurityjwt.config;
 
-import me.iseunghan.tutorialspringsecurityjwt.account.AccountService;
 import me.iseunghan.tutorialspringsecurityjwt.jwt.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
