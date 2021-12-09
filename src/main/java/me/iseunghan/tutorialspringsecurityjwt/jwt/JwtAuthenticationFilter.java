@@ -66,12 +66,17 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         String jwtToken = tokenProvider.createToken(authentication);
         // 응답 헤더에 토큰 담기
         response.addHeader("Authorization", "Bearer " + jwtToken);
+
         // 쿠키 생성 및 보안적용
-        Cookie cookie = new Cookie("Authorization", jwtToken);
+        Cookie cookie = new Cookie("Authorization", "Bearer" + jwtToken);
 
         // set HttpOnly
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
+//        cookie.setHttpOnly(true);  accessToken -> HttpOnly : false
+//        cookie.setSecure(true);    is not https
+        // all path request will send this cookie
+        cookie.setPath("/");
+        // set Domain : localhost
+        cookie.setDomain("localhost");
 
         // expired in 30m
         cookie.setMaxAge(30 * 60);
