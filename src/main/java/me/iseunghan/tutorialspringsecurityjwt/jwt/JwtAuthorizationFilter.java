@@ -11,6 +11,7 @@ import org.springframework.util.StringUtils;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -19,6 +20,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthorizationFilter.class);
     private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String BEARER_PREFIX = "Bearer";
 
     private final TokenProvider tokenProvider;
 
@@ -50,9 +52,22 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
     private String extractToken(HttpServletRequest request) {
         String header = request.getHeader(AUTHORIZATION_HEADER);
         // Bearer 형식 토큰이 존재하는지?
-        if(StringUtils.hasText(header) && header.startsWith("Bearer")) {
-            return header.replace("Bearer", "").trim();
+        if(StringUtils.hasText(header) && header.startsWith(BEARER_PREFIX)) {
+            return header.replace(BEARER_PREFIX, "").trim();
         }
+
+        // find JWT in Cookies
+        Cookie[] cookies = request.getCookies();
+
+        // cookies null check!
+        if(cookies != null) {
+            for (Cookie c : cookies) {
+                if (c.getValue().startsWith(BEARER_PREFIX)) {
+                    return c.getValue().substring(6);
+                }
+            }
+        }
+
         return null;
     }
 }
